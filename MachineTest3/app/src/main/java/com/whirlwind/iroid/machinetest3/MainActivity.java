@@ -10,8 +10,11 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.whirlwind.iroid.machinetest3.adapter.JsoncyclerAdapter;
 import com.whirlwind.iroid.machinetest3.model.JsoncyclerFeeder;
+import com.whirlwind.iroid.machinetest3.model.Result;
+import com.whirlwind.iroid.machinetest3.model.SomeInfo;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,11 +45,13 @@ public class MainActivity extends AppCompatActivity {
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
         String url = "http://iroidtech.com/test/details.php";
-       new  ThreetierTask().execute(url);
+        new ThreetierTask().execute(url);
     }
 
 
-    public class ThreetierTask extends AsyncTask<String, Void, Integer>{
+    public class ThreetierTask extends AsyncTask<String, Void, SomeInfo> {
+
+        private SomeInfo someInfo;
 
         @Override
         protected void onPreExecute() {
@@ -55,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         @Override
-        protected Integer doInBackground(String... params) {
+        protected SomeInfo doInBackground(String... params) {
             Integer result = 0;
             HttpURLConnection urlConnection;
             try {
@@ -71,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                     while ((line = br.readLine()) != null) {
                         response.append(line);
                     }
-                    parseResult(response.toString());
+                    someInfo = parseResult(response.toString());
                     result = 1; // Successful
                 } else {
                     result = 0; //"Failed to fetch data!";
@@ -79,15 +84,15 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Log.d(TAG, e.getLocalizedMessage());
             }
-            return result; //"Failed to fetch data!";
+            return someInfo; //"Failed to fetch data!";
         }
 
         @Override
-        protected void onPostExecute(Integer result) {
+        protected void onPostExecute(SomeInfo result) {
             progressBar.setVisibility(View.GONE);
 
-            if (result == 1) {
-                adapter = new JsoncyclerAdapter(MainActivity.this, feedsList);
+            if (result !=null) {
+                adapter = new JsoncyclerAdapter(MainActivity.this, result.getResult());
                 mRecyclerView.setAdapter(adapter);
             } else {
                 Toast.makeText(MainActivity.this, "Failed to fetch data!", Toast.LENGTH_SHORT).show();
@@ -97,42 +102,99 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    private void parseResult(String result) {
 
-        try {
-            JSONObject response = new JSONObject(result);
-            JSONArray posts = response.optJSONArray("posts");
-            feedsList = new ArrayList<>();
 
-            for (int i = 0; i < (posts.length()-1); i++) {
-                JSONObject post = posts.optJSONObject(i);
-                JsoncyclerFeeder item = new JsoncyclerFeeder();
-                item.setTitle(post.optString("title"));
-                item.setDescription(post.optString("description"));
+    private SomeInfo parseResult(String result) {
 
-                JSONObject images = post.getJSONObject("images");
-                item.setImg1(images.optString("img1"));
-                item.setImg2(images.optString("img2"));
+        Gson gson = new Gson();
 
-                feedsList.add(item);
-            }
+        SomeInfo someInfo = gson.fromJson(result, SomeInfo.class);
 
-            int i = 3;
-            if (i == posts.length()){
-                JSONObject post = posts.optJSONObject(i);
-                JsoncyclerFeeder item = new JsoncyclerFeeder();
-                item.setTitle(post.optString("title"));
-                item.setDescription(post.optString("description"));
 
-                JSONObject images = post.getJSONObject("images");
-                item.setImg1(images.optString("img1"));
+//        SomeInfo someInfo = null;
+//
+//        try {
+//
+//             someInfo = new SomeInfo();
+//            JSONObject mainObject = new JSONObject(result);
+//
+//            someInfo.setStatus(mainObject.has("status") ? mainObject.getString("status") : "");
+//
+//            JSONArray jsonArray = mainObject.getJSONArray("result");
+//
+//
+//            Result resultArray [] = new Result[jsonArray.length()];
+//
+//
+//
+//            for (int i = 0; i < jsonArray.length(); i++) {
+//
+//                Result resultObject = new Result();
+//
+//
+//                JSONObject jsonObject = jsonArray.getJSONObject(i);
+//
+//                resultObject.setTitle(jsonObject.getString("title"));
+//                resultObject.setDescription(jsonObject.getString("description"));
+//
+//                JSONArray imageArray = jsonObject.getJSONArray("image_url");
+//
+//                String image[] = new String[imageArray.length()];
+//
+//                for (int i1 = 0; i1 < imageArray.length(); i1++) {
+//                    image[i1] = (String) imageArray.get(i1);
+//                }
+//
+//                resultObject.setImage_url(image);
+//
+//                resultArray[i] = resultObject;
+//
+//
+//            }
+//
+//            someInfo.setResult(resultArray);
+//
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//
+//////////////////////// MUSTHAFA
+//        try {
+//            JSONObject response = new JSONObject(result);
+//            JSONArray posts = response.optJSONArray("posts");
+//            feedsList = new ArrayList<>();
+//
+//            for (int i = 0; i < (posts.length() - 1); i++) {
+//                JSONObject post = posts.optJSONObject(i);
+//                JsoncyclerFeeder item = new JsoncyclerFeeder();
+//                item.setTitle(post.optString("title"));
+//                item.setDescription(post.optString("description"));
+//
+//                JSONObject images = post.getJSONObject("images");
+//                item.setImg1(images.optString("img1"));
+//                item.setImg2(images.optString("img2"));
+//
+//                feedsList.add(item);
+//            }
+//
+//            int i = 3;
+//            if (i == posts.length()) {
+//                JSONObject post = posts.optJSONObject(i);
+//                JsoncyclerFeeder item = new JsoncyclerFeeder();
+//                item.setTitle(post.optString("title"));
+//                item.setDescription(post.optString("description"));
+//
+//                JSONObject images = post.getJSONObject("images");
+//                item.setImg1(images.optString("img1"));
+//
+//                feedsList.add(item);
+//            }
+//
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
 
-                feedsList.add(item);
-            }
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        return someInfo;
     }
 
 
